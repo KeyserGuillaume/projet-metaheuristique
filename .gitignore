@@ -1,0 +1,13 @@
+src/.idea
+src/cmake-build-debug
+venv/
+solutions/*
+
+python_scripts/credentials.json
+python_scripts/token.pickle
+python_scripts/.idea
+python_scripts/__pycache__
+
+Instances_grilles_tronquees
+
+*.png

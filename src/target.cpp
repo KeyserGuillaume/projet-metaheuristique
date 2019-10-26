@@ -50,6 +50,10 @@ void Target::add_target_capt(Target* a){
     delta_capt.push_back(a);
 }
 
+void Target::add_target_2_capt(Target* a){
+    delta_2_capt.push_back(a);
+}
+
 void Target::add_target_comm(Target* a){
     delta_comm.push_back(a);
 }
@@ -67,6 +71,18 @@ int Target::get_nb_of_captors() const{
     return s;
 }
 
+bool Target::is_capted() const {
+    // NB we say that a captor is necessarily capted (even if it is by itself)
+    if (id == 0 || am_i_a_captor){
+        return true;
+    }
+    for (unsigned int j = 0; j < delta_capt.size(); j++) {
+        if (delta_capt[j]->is_captor())
+            return true;
+    }
+    return false;
+}
+
 vector<Target *> Target::get_uniquely_capted_targets() const {
     vector<Target*> v1_essential = vector<Target*>(0);
     // find targets uniquely capted by this one, not captors themselves, not the well
@@ -80,26 +96,14 @@ vector<Target *> Target::get_uniquely_capted_targets() const {
     return v1_essential;
 }
 
-bool Target::is_capted() const {
-    // NB we say that a captor is necessarily capted (even if it is by itself)
-    if (id == 0 || am_i_a_captor){
-        return true;
-    }
-    for (unsigned int j = 0; j < delta_capt.size(); j++) {
-        if (delta_capt[j]->is_captor())
-            return true;
-    }
-    return false;
-}
-
-bool Target::has_uniquely_capted_targets() const {
+bool Target::has_any_uniquely_capted_targets() const {
     if (!is_captor()){
-        throw std::invalid_argument("Target::has_uniquely_capted_targets is undefined for non-captor targets");
+        throw std::invalid_argument("Target::has_any_uniquely_capted_targets is undefined for non-captor targets");
     }
     vector<Target*> u_neighbors;
     bool is_uniquely_capted;
     for (unsigned int i = 0; i < delta_capt.size(); i++){
-        if (delta_capt[i]->get_id() != 0){
+        if (!delta_capt[i]->is_captor() && delta_capt[i]->get_id() != 0){
             u_neighbors = delta_capt[i]->get_delta_capt();
             is_uniquely_capted = true;
             for (unsigned int j = 0; j < u_neighbors.size() && is_uniquely_capted; j++){
@@ -111,8 +115,7 @@ bool Target::has_uniquely_capted_targets() const {
         }
     }
     return false;
-};
-
+}
 
 
 ostream& operator<<(ostream& str, const Target& s){

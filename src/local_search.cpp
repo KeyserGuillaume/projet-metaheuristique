@@ -11,7 +11,7 @@ LocalSearch::LocalSearch(Field* my_f, CostFunction* my_cost){
 
 void LocalSearch::remove_if_useless_captor(const int &i) {
     Target* u = (*F)[i];
-    if (!u->is_captor() || u->has_uniquely_capted_targets()){
+    if (!u->is_captor() || u->has_any_uniquely_capted_targets()){
         return;
     }
     u->unmake_captor();
@@ -19,29 +19,29 @@ void LocalSearch::remove_if_useless_captor(const int &i) {
         remove_captor_from_solution(i);
     }
     else{
+        //std::cout << "captor " << i << " is required for communication" << std::endl;
         u->make_captor();
     }
 }
 
-void LocalSearch::remove_captor_from_solution(const int &i) {
-    Target* u = (*F)[i];
+void LocalSearch::remove_captor_from_solution(const int &id) {
     for (unsigned int i = 0; i < current_solution.size(); i++){
-        if (current_solution[i] == u->get_id()){
-            // erase by replacing with last element and erasing last element
+        if (current_solution[i] == id){
+            // erase in constant time by replacing with last element and erasing last element
             current_solution[i] = current_solution[current_value()-1];
             current_solution.pop_back();
-            if (k > 0) std::cout << "removed a useless captor " << u->get_id() << std::endl;
+            if (k > 0) std::cout << "removed a useless captor " << i << std::endl;
         }
     }
 }
 
 void LocalSearch::init() {
-    // simplest way to initialize : make them all captors,  except the well
-    for (int i = 1; i < F->size(); i++){
+    // simplest way to initialize : make them all captors, except the well
+    for (unsigned int i = 1; i < F->size(); i++){
         (*F)[i]->make_captor();
         current_solution.push_back(i);
     }
-    for (int i = 1; i < F->size(); i++){
+    for (unsigned int i = 1; i < F->size(); i++){
         remove_if_useless_captor(i);
     }
     //initialize random numbers generator
@@ -69,7 +69,6 @@ void LocalSearch::flea_move(const int &id) {
      * Move captor from v1 to v2 if feasible
      * id must be the id of a captor
      */
-
     if (!(*F)[id]->is_captor())
         throw std::invalid_argument( "LocalSearch::flea_move only accepts captors.");
     Target* v1 = (*F)[id];
@@ -127,8 +126,8 @@ void LocalSearch::flea_move(const int &id) {
     }
     if (verbose)
         std::cout << "accepted to move captor of " << v1->get_id() << " to " << v2->get_id() << std::endl;
-    // Check that the neighbors of v2 did not become useless
-    vector<Target*> v2_neighbors = v2->get_delta_capt();
+    // Check that the neighbors of v2 in the graph of radius 2*r_capt did not become useless
+    vector<Target*> v2_neighbors = v2->get_delta_2_capt();
     for (unsigned int i = 0; i < v2_neighbors.size(); i++){
         remove_if_useless_captor(v2_neighbors[i]->get_id());
     }
@@ -152,7 +151,7 @@ int nb_chiffres(int i){
 void LocalSearch::stats() const {
     map<int, int> count;
     int nb_uniquely_capted_targets;
-    for (int i = 1; i < current_solution.size(); i++){
+    for (unsigned int i = 1; i < current_solution.size(); i++){
         nb_uniquely_capted_targets = (*F)[current_solution[i]]->get_uniquely_capted_targets().size();
         count[nb_uniquely_capted_targets]++;
     }
@@ -174,7 +173,7 @@ void LocalSearch::stats(CostFunction *myCost) const {
 int LocalSearch::current_cost() const {
     int s= 0;
     Target u;
-    for (int i = 0; i < F->size(); i++){
+    for (unsigned int i = 0; i < F->size(); i++){
         s += (*cost_computer)(*((*F)[i]));
     }
     return s;
@@ -182,8 +181,8 @@ int LocalSearch::current_cost() const {
 
 void LocalSearch::check_solution_is_ok() const {
     F->check_solution_is_ok();
-    int s = 0;
-    for (int i = 1; i < F->size(); i++) {
+    unsigned int s = 0;
+    for (unsigned int i = 1; i < F->size(); i++) {
         if ((*F)[i]->is_captor())
             s++;
     }

@@ -17,7 +17,7 @@ public:
     Target* operator[](const int &i) const{return V+i;}
     bool is_communicating() const;
     void check_solution_is_ok() const;
-    int size() const{return _size;}
+    unsigned int size() const{return _size;}
     int cost() const;
 
 };

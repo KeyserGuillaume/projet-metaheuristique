@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 
-import math
-
 import pandas
 import numpy as np
 
@@ -10,9 +8,13 @@ import scipy.spatial
 
 import matplotlib.pyplot as plt
 
+from pandas.errors import ParserError
+
+from google_sheet_api import write_results_on_gsheet
+
 
 def read_solution(solution_path):
-    V = pandas.read_csv(solution_path, header=None, sep=' ').dropna(axis=1).values[:,:]
+    V = pandas.read_csv(solution_path, header=None, sep=' ').dropna(axis=1).values[:, 0]
     return V
 
 
@@ -77,14 +79,16 @@ def compute_instances_statistics(instances):
         print("\n")
 
 
-def stupid_heuristic(V, r_comm, r_capt):
+def stupid_heuristic(V, r_capt, r_comm):
     # check the first node is (0, 0)
     assert V[0][0] + V[0][1] == 0
     G_capt = build_graph(V, r_capt)
     G_com = build_graph(V, r_comm)
     L = np.hstack([np.ones(1), np.zeros(len(V) - 1)]).reshape(-1, 1)
     captors = np.hstack([np.ones(1), np.zeros(len(V) - 1)]).reshape(-1, 1)
-    while L.sum() < len(V):
+    # i = 0
+    while L.sum() < len(V):  # and i < 1000:
+        # i += 1
         print("{}% couverts".format(L.sum()/len(V)*100))
         v_com = (np.dot(G_com, captors) >= 1).astype(int)
         # we could set 0 for captors already there but since those will cover 0 new
@@ -105,28 +109,39 @@ def test_and_visualize_stupid_heuristic(instances):
         r_capt = 1
         r_comm = 2
         V = read_instance(path + instance)
-        solution = stupid_heuristic(V, r_comm, r_capt)
+        solution = stupid_heuristic(V, r_capt, r_comm)
         plot_solution(V, solution, r_capt, r_comm)
 
 
 path = "../Instances/"
 instances = os.listdir(path)
+instances.sort()
+radius_pairs = [[1, 1], [1, 2], [2, 2], [2, 3]]
+# this defines 4*24 = 96 instances of the problem...
+
+my_list = []
+for instance in instances:
+    for radius_pair in radius_pairs:
+        my_list += [instance + "_{}_{}".format(radius_pair[0], radius_pair[1])]
+write_results_on_gsheet("A", my_list)
+
+my_list = []
+for instance in instances:
+    for radius_pair in radius_pairs:
+        print(instance, radius_pair)
+        my_list += [len(stupid_heuristic(read_instance(path + instance),
+                                         radius_pair[0], radius_pair[1]))]
+write_results_on_gsheet("B", my_list)
+
+instance = "grille1010_1.dat"
+r_capt = 1
+r_comm = 2
 
 
-instance = "../Instances/captANOR900_15_20.dat"
+"""instance = "../Instances/captANOR900_15_20.dat"
 V = read_instance(instance)
 r_capt = 1
 r_comm = 2
 initial_solution = read_solution("../solutions/sol_1.txt")
 final_solution = read_solution("../solutions/sol_2.txt")
-
-plot_solution(V, initial_solution, r_capt, r_comm)
-
-plot_solution(V, final_solution, r_capt, r_comm)
-
-
-
-
-
-
-
+"""

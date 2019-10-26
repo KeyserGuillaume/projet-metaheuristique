@@ -50,6 +50,10 @@ void Field::compute_graph(const int &r_capt, const int &r_comm) {
                 V[i].add_target_comm(V+j);
                 V[j].add_target_comm(V+i);
             }
+            if (d < 2*r_capt){
+                V[i].add_target_2_capt(V+j);
+                V[j].add_target_2_capt(V+i);
+            }
         }
     }
 }
