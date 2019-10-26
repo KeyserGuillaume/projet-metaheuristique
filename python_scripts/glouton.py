@@ -11,6 +11,11 @@ import scipy.spatial
 import matplotlib.pyplot as plt
 
 
+def read_solution(solution_path):
+    V = pandas.read_csv(solution_path, header=None, sep=' ').dropna(axis=1).values[:,:]
+    return V
+
+
 def read_instance(instance_path):
     V = pandas.read_csv(instance_path, header=None, sep=' ').dropna(axis=1).values[:, [1, 2]]
     return V
@@ -36,10 +41,10 @@ def plot_instance(V, show=True, title=None):
     return fig, ax
 
 
-def plot_solution(V, solution, R_capt, R_com):
+def plot_solution(V, solution, r_capt, r_comm):
     fig, ax = plot_instance(V, False, "Solution avec {} capteurs pour {} cibles".format(len(solution), len(V)))
 
-    circles = [plt.Circle((V[i, 0], V[i, 1]), R_capt, color='b', alpha=0.1) for i in solution]
+    circles = [plt.Circle((V[i, 0], V[i, 1]), r_capt, color='b', alpha=0.1) for i in solution]
     for circle in circles:
         ax.add_artist(circle)
 
@@ -72,11 +77,11 @@ def compute_instances_statistics(instances):
         print("\n")
 
 
-def stupid_heuristic(V, R_com, R_capt):
+def stupid_heuristic(V, r_comm, r_capt):
     # check the first node is (0, 0)
     assert V[0][0] + V[0][1] == 0
-    G_capt = build_graph(V, R_capt)
-    G_com = build_graph(V, R_com)
+    G_capt = build_graph(V, r_capt)
+    G_com = build_graph(V, r_comm)
     L = np.hstack([np.ones(1), np.zeros(len(V) - 1)]).reshape(-1, 1)
     captors = np.hstack([np.ones(1), np.zeros(len(V) - 1)]).reshape(-1, 1)
     while L.sum() < len(V):
@@ -94,15 +99,34 @@ def stupid_heuristic(V, R_com, R_capt):
     return solution
 
 
+def test_and_visualize_stupid_heuristic(instances):
+    for instance in instances:
+        print(instance)
+        r_capt = 1
+        r_comm = 2
+        V = read_instance(path + instance)
+        solution = stupid_heuristic(V, r_comm, r_capt)
+        plot_solution(V, solution, r_capt, r_comm)
+
+
 path = "../Instances/"
 instances = os.listdir(path)
 
 
-#instance = path + instances[1]
-for instance in instances[0:2]:
-    print(instance)
-    R_capt = 3
-    R_com = 2
-    V = read_instance(path + instance)
-    solution = stupid_heuristic(V, R_com, R_capt)
-    plot_solution(V, solution, R_capt, R_com)
+instance = "../Instances/captANOR900_15_20.dat"
+V = read_instance(instance)
+r_capt = 1
+r_comm = 2
+initial_solution = read_solution("../solutions/sol_1.txt")
+final_solution = read_solution("../solutions/sol_2.txt")
+
+plot_solution(V, initial_solution, r_capt, r_comm)
+
+plot_solution(V, final_solution, r_capt, r_comm)
+
+
+
+
+
+
+
