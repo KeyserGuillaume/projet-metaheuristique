@@ -8,9 +8,8 @@ import scipy.spatial
 
 import matplotlib.pyplot as plt
 
-from pandas.errors import ParserError
-
 from google_sheet_api import write_results_on_gsheet
+from call_cpp_program import call_cpp_program
 
 
 def read_solution(solution_path):
@@ -133,15 +132,10 @@ for instance in instances:
                                          radius_pair[0], radius_pair[1]))]
 write_results_on_gsheet("B", my_list)
 
-instance = "grille1010_1.dat"
-r_capt = 1
-r_comm = 2
+my_list = []
+for instance in instances:
+    for radius_pair in radius_pairs:
+        print(instance, radius_pair)
+        my_list += [call_cpp_program(instance, radius_pair[0], radius_pair[1])]
 
-
-"""instance = "../Instances/captANOR900_15_20.dat"
-V = read_instance(instance)
-r_capt = 1
-r_comm = 2
-initial_solution = read_solution("../solutions/sol_1.txt")
-final_solution = read_solution("../solutions/sol_2.txt")
-"""
+write_results_on_gsheet("D", my_list)

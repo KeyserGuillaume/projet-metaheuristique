@@ -7,13 +7,27 @@
 
 
 
-int main(){
+int main(int argc, char *argv[]){ //std::cout << argv[1] << std::endl; return 0;
 
-   // std::string instance = "../../Instances/square_grid_10X10.dat";
-    std::string instance = "../../Instances/captANOR900_15_20.dat";
+    std::string instance;
+    int r_capt, r_comm;
+
+    if (argc == 1){
+        instance = "../../Instances/square_grid_10X10.dat";
+        //instance = "../../Instances/grille3030_1_ok.dat";
+        r_capt = 1;
+        r_comm = 1;
+    }
+    else{
+        if (argc != 4) throw std::invalid_argument( "No arguments given for r_capt and r_comm.");
+        instance = "../../Instances/" + std::string(argv[1]);
+        r_capt = std::stoi(argv[2]);
+        r_comm = std::stoi(argv[3]);
+    }
+    std::cout << instance << r_capt << r_comm << std::endl;
 
     Field F(instance);
-    F.compute_graph(1, 2);
+    F.compute_graph(r_capt, r_comm);
     NbCaptors CF = NbCaptors();
     LocalSearch LS (&F, &CF);
 
@@ -25,7 +39,7 @@ int main(){
 
     LS.display();
     LS.check_solution_is_ok();
-    LS.run(1000000, 10000);
+    LS.run(400000, 1000);
 
     // to check we are not stuck in a local minimum, we verify that
     // moves are accepted, by raising the verbosity level on a few iterations.
@@ -37,6 +51,9 @@ int main(){
 
     //LS.write_solution("../../solutions/sol_2.txt");
 
+    std::cout << "found solution with nb of captors equal to :      ";
+
+    std::cout << LS.current_value();
 
     return 0;
 }

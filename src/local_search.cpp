@@ -85,14 +85,27 @@ void LocalSearch::flea_move(const int &id) {
             v1->make_captor();
         return;
     }
-    // Pick a random such target
-    Target u = *(v1_essential[rand()%v1_essential.size()]);
-    vector<Target*> u_neighbors = u.get_delta_capt();
-    // Pick a random neighbor of u for v2, not a captor, not the well
-    Target* v2 = u_neighbors[rand()%u_neighbors.size()];
-    while (v2->get_id() == 0 || v2->is_captor()){
-        v2 = u_neighbors[rand()%u_neighbors.size()];
+    // Pick a random such target, having at least one neighbor other than v1
+    bool found = false;
+    for (unsigned i = 0; i < v1_essential.size() && !found; i++){
+        if (v1_essential[i]->get_delta_capt().size() > 2){
+            found = true;
+        }
     }
+    if (!found) return;
+    // We could build a vector of acceptable neighbors for u, but
+    // I think that would slow down iterations
+    Target* u;
+    vector<Target*> u_neighbors;
+    do {
+        u = v1_essential[rand() % v1_essential.size()];
+        u_neighbors = u->get_delta_capt();
+    } while (u_neighbors.size() < 2);
+    // Pick a random neighbor of u for v2, not the well (we know that it cannot be a captor)
+    Target* v2;
+    do {
+        v2 = u_neighbors[rand()%u_neighbors.size()];
+    } while (v2->get_id() == 0);
     // Make changes in the field, they will be reverted if the move is unfeasible
     v1->unmake_captor();
     v2->make_captor();
