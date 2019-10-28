@@ -97,7 +97,7 @@ vector<Target *> Target::get_uniquely_capted_targets() const {
 }
 
 bool Target::has_any_uniquely_capted_targets() const {
-    if (!is_captor()){
+    if (!am_i_a_captor){
         throw std::invalid_argument("Target::has_any_uniquely_capted_targets is undefined for non-captor targets");
     }
     vector<Target*> u_neighbors;

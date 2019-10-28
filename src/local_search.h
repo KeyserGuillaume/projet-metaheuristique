@@ -19,16 +19,18 @@ private:
 
 public:
     bool verbose;
+    bool keep_writing=true;
     LocalSearch(Field* my_f, CostFunction* my_cost);
 
     void run(const long &nb_iteration, const int &period_display);
     void jump();
     void flea_move(const int &id);
     void caterpillar_move(const int &id);
+    void move_solution(const int& u, const int& v);
 
     int current_value() const {return current_solution.size();}
     int current_cost() const;
-    void check_solution_is_ok() const;
+    void check_solution_is_ok(const bool& only_inner_consistency=false) const;
     void write_solution(const std::string &filename) const;
     void stats() const;
     void stats(CostFunction *myCost) const;

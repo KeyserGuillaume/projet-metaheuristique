@@ -15,6 +15,7 @@ int main(int argc, char *argv[]){ //std::cout << argv[1] << std::endl; return 0;
     if (argc == 1){
         instance = "../../Instances/square_grid_10X10.dat";
         //instance = "../../Instances/grille3030_1_ok.dat";
+        //instance = "../../Instances/captANOR1500_21_500.dat";
         r_capt = 1;
         r_comm = 1;
     }
@@ -39,17 +40,18 @@ int main(int argc, char *argv[]){ //std::cout << argv[1] << std::endl; return 0;
 
     LS.display();
     LS.check_solution_is_ok();
-    LS.run(400000, 1000);
+    LS.run(40000, 1000);
 
     // to check we are not stuck in a local minimum, we verify that
     // moves are accepted, by raising the verbosity level on a few iterations.
-    /*LS.verbose = true;
-    LS.run(100, 1);
-    LS.display();*/
+    LS.verbose = true;
+    LS.keep_writing = true;
+    LS.run(1000, 1);
+    LS.display();
 
     LS.stats();
 
-    //LS.write_solution("../../solutions/sol_2.txt");
+    LS.write_solution("../../solutions/sol_1.txt");
 
     std::cout << "found solution with nb of captors equal to :      ";
 

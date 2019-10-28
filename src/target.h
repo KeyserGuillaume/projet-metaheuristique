@@ -21,8 +21,10 @@ public:
     void add_target_capt(Target* a);
     void add_target_2_capt(Target* a);
     void add_target_comm(Target* a);
-    void make_captor(){am_i_a_captor = true;}
-    void unmake_captor(){am_i_a_captor = false;}
+    void make_captor(){if (am_i_a_captor) throw std::invalid_argument("already a captor"); am_i_a_captor = true;}
+    //void make_captor(){am_i_a_captor = true;}
+    void unmake_captor(){if (!am_i_a_captor) throw std::invalid_argument("not a captor");am_i_a_captor = false;}
+    //void unmake_captor(){am_i_a_captor = false;}
 
     int get_id() const{return id;}
     fpair get_coords() const{return coords;}

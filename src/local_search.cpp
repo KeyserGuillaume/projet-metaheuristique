@@ -69,9 +69,9 @@ void LocalSearch::flea_move(const int &id) {
      * Move captor from v1 to v2 if feasible
      * id must be the id of a captor
      */
-    if (!(*F)[id]->is_captor())
-        throw std::invalid_argument( "LocalSearch::flea_move only accepts captors.");
     Target* v1 = (*F)[id];
+    if (!v1->is_captor())
+        throw std::invalid_argument( "LocalSearch::flea_move only accepts captors.");
     // Find targets uniquely capted by v1, not captors themselves, not the well
     vector<Target*> v1_essential = v1->get_uniquely_capted_targets();
     // If none, check that v1 is not useless. Exit function.
@@ -81,8 +81,10 @@ void LocalSearch::flea_move(const int &id) {
             remove_captor_from_solution(id);
             std::cout << "careful" << std::endl;
         }
-        else
+        else{
             v1->make_captor();
+            caterpillar_move(id);
+        }
         return;
     }
     // Pick a random such target, having at least one neighbor other than v1
@@ -101,11 +103,11 @@ void LocalSearch::flea_move(const int &id) {
         u = v1_essential[rand() % v1_essential.size()];
         u_neighbors = u->get_delta_capt();
     } while (u_neighbors.size() < 2);
-    // Pick a random neighbor of u for v2, not the well (we know that it cannot be a captor)
+    // Pick a random neighbor of u for v2, not the well, not v1 (we know that it cannot be a captor)
     Target* v2;
     do {
         v2 = u_neighbors[rand()%u_neighbors.size()];
-    } while (v2->get_id() == 0);
+    } while (v2->get_id() == id); // || v2->get_id() == 0);
     // Make changes in the field, they will be reverted if the move is unfeasible
     v1->unmake_captor();
     v2->make_captor();
@@ -132,11 +134,7 @@ void LocalSearch::flea_move(const int &id) {
         return;
     }
     // If we got this far then the move was feasible, for now we accept it
-    for (unsigned int i = 0; i < current_solution.size(); i++){
-        if (current_solution[i] == v1->get_id()){
-            current_solution[i] = v2->get_id();
-        }
-    }
+    move_solution(v1->get_id(), v2->get_id());
     if (verbose)
         std::cout << "accepted to move captor of " << v1->get_id() << " to " << v2->get_id() << std::endl;
     // Check that the neighbors of v2 in the graph of radius 2*r_capt did not become useless
@@ -144,10 +142,95 @@ void LocalSearch::flea_move(const int &id) {
     for (unsigned int i = 0; i < v2_neighbors.size(); i++){
         remove_if_useless_captor(v2_neighbors[i]->get_id());
     }
+    /*for (unsigned int i = 0; i < F->size(); i++){
+        remove_if_useless_captor((*F)[i]->get_id());
+    }*/
 }
 
 void LocalSearch::caterpillar_move(const int &id) {
+    if (keep_writing) write_solution("../../solutions/sol_2.txt");
+    // we assume u does not have any uniquely capted targets
+    Target* u;
+    // this is the tail of the caterpillar, ie the targets whose captors we will remove
+    vector<Target*> tail = vector<Target*>(0);
+    vector<Target*> potential_u = vector<Target*>(1, (*F)[id]);
+    vector<Target*> u_neighbors_comm;
+    int u_old = -1;
+    bool caterpillar_tail = true;
+    // trace the tail + body of the caterpillar
+    do {
+        u = potential_u[rand()%potential_u.size()];
+        if (u->has_any_uniquely_capted_targets()){
+            caterpillar_tail = false;
+        }
+        if (caterpillar_tail){
+            u->unmake_captor();
+            if (u->is_capted()){
+                tail.push_back(u);
+            }
+            else{
+                u->make_captor();
+                caterpillar_tail = false;
+            }
+        }
+        potential_u = vector<Target*>(0);
+        u_neighbors_comm = u->get_delta_comm();
+        for (unsigned int i = 0; i < u_neighbors_comm.size(); i++){
+            if (u_neighbors_comm[i]->is_captor() && u_neighbors_comm[i]->get_id() != u_old)
+                potential_u.push_back(u_neighbors_comm[i]);
+        }
+        u_old = u->get_id();
+    } while (potential_u.size() > 0 && rand()%10 < 9);
+    // if tail is empty (ie the captor of id "id" didn't have any captor to capt him) there is nothing to do
+    if (tail.size() == 0){
+        return;
+    }
+    if (tail[0]->get_id() != id) throw std::logic_error("Dafuck?");
+    // define the head (ie where we will place the new captors)
+    vector<Target*> head = vector<Target*>(0);
+    for (unsigned int i = 0; i < tail.size(); i++){
+        potential_u = vector<Target*>(0);
+        u_neighbors_comm = u->get_delta_comm();
+        for (unsigned int i = 0; i < u_neighbors_comm.size(); i++){
+            if (!u_neighbors_comm[i]->is_captor())
+                potential_u.push_back(u_neighbors_comm[i]);
+        }
+        if (potential_u.size() == 0){
+            for (unsigned int i = 0; i < F->size(); i++){
+                if (!(*F)[i]->is_captor())
+                    potential_u.push_back((*F)[i]);
+            }
+        }
+        u = potential_u[rand()%potential_u.size()];
+        u->make_captor();
+        head.push_back(u);
+    }
 
+    // if the new solution is feasible, we accept it
+    // if it is not, revert changes
+    if (F->is_communicating()){
+        for (unsigned int i = 0; i < tail.size(); i++){
+            move_solution(tail[i]->get_id(), head[i]->get_id());
+        }
+        if (keep_writing) write_solution("../../solutions/sol_3.txt");
+        keep_writing = false;
+        for (unsigned int i = 1; i < F->size(); i++){
+            remove_if_useless_captor(i);
+        }
+        if (verbose) std::cout << "caterpillar move accepted" << std::endl;
+    }
+    else{
+        // do not change the order of the two lines below, they are inversed
+        // compared to the order above and it must stay so because sometimes
+        // some captor goes into the head and then into the tail...
+        // do not group them together either.
+        for (unsigned int i = 0; i < tail.size(); i++){
+            head[i]->unmake_captor();
+        }
+        for (unsigned int i = 0; i < tail.size(); i++){
+            tail[i]->make_captor();
+        }
+    }
 }
 
 void LocalSearch::write_solution(const std::string &filename) const {
@@ -192,19 +275,33 @@ int LocalSearch::current_cost() const {
     return s;
 }
 
-void LocalSearch::check_solution_is_ok() const {
-    F->check_solution_is_ok();
+void LocalSearch::check_solution_is_ok(const bool &only_inner_consistency) const {
     unsigned int s = 0;
-    for (unsigned int i = 1; i < F->size(); i++) {
+    for (unsigned int i = 0; i < F->size(); i++) {
         if ((*F)[i]->is_captor())
             s++;
     }
     if (s != current_solution.size()) {
-        std::cerr << "LocalSearch::check_solution_is_ok : ";
         std::cerr << "solution contains " << current_solution.size() << " items whereas ";
         std::cerr << "Field contains " << s << " captors !!!" << std::endl;
+        throw std::logic_error("Inconsistency found in solution");
     }
+    if (!only_inner_consistency){
+        F->check_solution_is_ok();
+    }
+}
 
+void LocalSearch::move_solution(const int &v1, const int &v2) {
+    bool found = false;
+    for (unsigned int i = 0; i < current_solution.size() && !found; i++){
+        if (current_solution[i] == v1){
+            current_solution[i] = v2;
+            found = true;
+        }
+    }
+    if (!found){
+        throw std::logic_error("Target " + std::to_string(v1) + " should have been in the solution.");
+    }
 }
 
 void write_solution_to_file(std::string filename, vector<int> solution) {

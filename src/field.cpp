@@ -63,6 +63,9 @@ void Field::check_solution_is_ok() const {
         if (!V[i].is_capted()){
             throw std::logic_error("The target " + std::to_string(V[i].get_id()) + "  is not capted !");
         }
+        if (V[i].get_id() != i){
+            throw std::logic_error("The target of id " + std::to_string(V[i].get_id()) + " is in the " + std::to_string(i) + "th position !");
+        }
     }
     if (!this->is_communicating()){
         throw std::logic_error("All the captors do not communicate with the well !");
@@ -81,7 +84,6 @@ bool Field::is_communicating() const {
     while (my_queue.size() > 0){
         u = my_queue.front();
         my_queue.pop();
-        // std::cout << u.get_id() << std::endl;
         u_neighbors = u.get_delta_comm();
         for (unsigned int i = 0; i < u_neighbors.size(); i++){
             if (u_neighbors[i]->is_captor() && !captor_was_marked[u_neighbors[i]->get_id()]){
@@ -93,7 +95,6 @@ bool Field::is_communicating() const {
     // checking for any unmarked captors
     for (unsigned int i = 0; i < captor_was_marked.size(); i++){
         if (V[i].is_captor() && !captor_was_marked[i]){
-            // std::cout << "captor " << V[i].get_id() << " does not communicate" << endl;
             return false;
         }
     }
