@@ -117,48 +117,6 @@ def test_and_visualize_stupid_heuristic(instances, r_capt=1, r_comm=1, show_comm
         plot_solution(V, solution, r_capt, r_comm, show_comm)
 
 
-def visualize_diff_between_solutions(instance, r_capt, r_comm, path_to_solution1, path_to_solution2):
-    V = read_instance(instance)
-    solution1 = read_solution(path_to_solution1)
-    solution2 = read_solution(path_to_solution2)
-
-    circles_instance = [plt.Circle((v[0], v[1]), 0.05, color='g') for v in V]
-    fig, ax = plt.subplots()
-    ax.set_xlim((-2, 2 + V[:, 0].max()))
-    ax.set_ylim((-2, 2 + V[:, 1].max()))
-    for circle in circles_instance:
-        ax.add_artist(circle)
-    plt.title("Avant")
-    circles = [plt.Circle((V[i, 0], V[i, 1]), r_capt,
-                          color='b' if i in solution2 else 'r', alpha=0.1) for i in solution1]
-    for circle in circles:
-        ax.add_artist(circle)
-    G_comm = build_graph(V, r_comm)
-    for u in solution1:
-        for v in solution1:
-            if u != v and G_comm[u, v] == 1:
-                ax.add_artist(plt.Line2D((V[u, 0], V[v, 0]), (V[u, 1], V[v, 1]), c='k'))
-    plt.show()
-
-    fig, ax = plt.subplots()
-    ax.set_xlim((-2, 2 + V[:, 0].max()))
-    ax.set_ylim((-2, 2 + V[:, 1].max()))
-    circles_instance = [plt.Circle((v[0], v[1]), 0.05, color='g') for v in V]
-    for circle in circles_instance:
-        ax.add_artist(circle)
-    plt.title("Après")
-    circles = [plt.Circle((V[i, 0], V[i, 1]), r_capt,
-                          color='b' if i in solution1 else 'r', alpha=0.1) for i in solution2]
-    for circle in circles:
-        ax.add_artist(circle)
-    G_comm = build_graph(V, r_comm)
-    for u in solution2:
-        for v in solution2:
-            if u != v and G_comm[u, v] == 1:
-                ax.add_artist(plt.Line2D((V[u, 0], V[v, 0]), (V[u, 1], V[v, 1]), c='k'))
-    plt.show()
-
-
 path = "../Instances/"
 instances = os.listdir(path)
 instances.sort()
@@ -188,15 +146,10 @@ for instance in instances:
 write_results_on_gsheet("E", my_list)
 
 # instance = "../Instances/captANOR225_9_20.dat"
-# instance = "../Instances/captANOR1500_15_100.dat"
-instance = "../Instances/square_grid_40X40.dat"
+instance = "../Instances/captANOR1500_15_100.dat"
+# instance = "../Instances/square_grid_15X15.dat"
 V = read_instance(instance)
 solution = read_solution("../solutions/sol_1.txt")
 plot_solution(V, solution, 1, 1, True)
-test_and_visualize_stupid_heuristic([instance], 1, 1, True)
+test_and_visualize_stupid_heuristic([instance], 2, 2, True)
 
-visualize_diff_between_solutions("../Instances/square_grid_10X10.dat",
-                                 1,
-                                 1,
-                                 "../solutions/sol_2.txt",
-                                 "../solutions/sol_3.txt")

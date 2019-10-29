@@ -13,9 +13,9 @@ int main(int argc, char *argv[]){ //std::cout << argv[1] << std::endl; return 0;
     int r_capt, r_comm;
 
     if (argc == 1){
-        instance = "../../Instances/square_grid_10X10.dat";
+        instance = "../../Instances/square_grid_40X40.dat";
         //instance = "../../Instances/grille3030_1_ok.dat";
-        //instance = "../../Instances/captANOR1500_21_500.dat";
+        //instance = "../../Instances/captANOR225_9_20.dat";
         r_capt = 1;
         r_comm = 1;
     }
@@ -40,13 +40,12 @@ int main(int argc, char *argv[]){ //std::cout << argv[1] << std::endl; return 0;
 
     LS.display();
     LS.check_solution_is_ok();
-    LS.run(40000, 1000);
+    LS.run(100000, 10000);
 
     // to check we are not stuck in a local minimum, we verify that
     // moves are accepted, by raising the verbosity level on a few iterations.
     LS.verbose = true;
-    LS.keep_writing = true;
-    LS.run(1000, 1);
+    LS.run(100, 1);
     LS.display();
 
     LS.stats();

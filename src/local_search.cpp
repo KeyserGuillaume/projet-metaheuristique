@@ -148,7 +148,6 @@ void LocalSearch::flea_move(const int &id) {
 }
 
 void LocalSearch::caterpillar_move(const int &id) {
-    if (keep_writing) write_solution("../../solutions/sol_2.txt");
     // we assume u does not have any uniquely capted targets
     Target* u;
     // this is the tail of the caterpillar, ie the targets whose captors we will remove
@@ -212,8 +211,6 @@ void LocalSearch::caterpillar_move(const int &id) {
         for (unsigned int i = 0; i < tail.size(); i++){
             move_solution(tail[i]->get_id(), head[i]->get_id());
         }
-        if (keep_writing) write_solution("../../solutions/sol_3.txt");
-        keep_writing = false;
         for (unsigned int i = 1; i < F->size(); i++){
             remove_if_useless_captor(i);
         }

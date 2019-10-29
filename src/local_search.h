@@ -19,7 +19,6 @@ private:
 
 public:
     bool verbose;
-    bool keep_writing=true;
     LocalSearch(Field* my_f, CostFunction* my_cost);
 
     void run(const long &nb_iteration, const int &period_display);
