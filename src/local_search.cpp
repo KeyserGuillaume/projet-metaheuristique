@@ -72,6 +72,7 @@ void LocalSearch::flea_move(const int &id) {
     Target* v1 = (*F)[id];
     if (!v1->is_captor())
         throw std::invalid_argument( "LocalSearch::flea_move only accepts captors.");
+    int previous_cost = (*cost_computer)(v1);
     // Find targets uniquely capted by v1, not captors themselves, not the well
     vector<Target*> v1_essential = v1->get_uniquely_capted_targets();
     // If none, check that v1 is not useless. Exit function.
@@ -128,7 +129,7 @@ void LocalSearch::flea_move(const int &id) {
     }
     // Stop there and revert change if moving the captor of v1 to v2 would mean some captors
     // would no longer be in communication with the well
-    if (!F->is_communicating()){
+    if (!F->is_communicating() || (*cost_computer)(v2) > previous_cost){
         v2->unmake_captor();
         v1->make_captor();
         return;
@@ -267,7 +268,7 @@ int LocalSearch::current_cost() const {
     int s= 0;
     Target u;
     for (unsigned int i = 0; i < F->size(); i++){
-        s += (*cost_computer)(*((*F)[i]));
+        s += (*cost_computer)((*F)[i]);
     }
     return s;
 }

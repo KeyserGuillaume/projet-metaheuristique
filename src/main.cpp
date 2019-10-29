@@ -29,7 +29,7 @@ int main(int argc, char *argv[]){ //std::cout << argv[1] << std::endl; return 0;
 
     Field F(instance);
     F.compute_graph(r_capt, r_comm);
-    NbCaptors CF = NbCaptors();
+    CostFunction CF = CostFunction();
     LocalSearch LS (&F, &CF);
 
     //LS.write_solution("../../solutions/sol_1.txt");
