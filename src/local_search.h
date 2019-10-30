@@ -5,6 +5,7 @@
 #include <sstream>
 #include <fstream>
 #include <math.h>
+#include <time.h>       /* clock_t, clock, CLOCKS_PER_SEC */
 
 
 class LocalSearch{
@@ -18,9 +19,10 @@ private:
     void remove_captor_from_solution(const int &i);
 
 public:
-    bool verbose;
+    bool verbose = false;
     LocalSearch(Field* my_f, CostFunction* my_cost);
 
+    void run_on_time_limit(const clock_t time_limit, const int &period_display);
     void run(const long &nb_iteration, const int &period_display);
     void jump();
     void flea_move(const int &id);

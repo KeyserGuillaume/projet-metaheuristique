@@ -6,7 +6,6 @@ LocalSearch::LocalSearch(Field* my_f, CostFunction* my_cost){
     cost_computer = my_cost;
     k = 0;
     init();
-    verbose = false;
 }
 
 void LocalSearch::remove_if_useless_captor(const int &i) {
@@ -55,9 +54,25 @@ void LocalSearch::run(const long &nb_iteration, const int &period_display) {
         if ((k - k0)%period_display==0) {
             display();
             check_solution_is_ok(); // raises errors if pb
-            // write_solution();
         }
     }
+}
+
+void LocalSearch::run_on_time_limit(const clock_t time_limit, const int &period_display) {
+    int k0 = k;
+    bool has_exceeded_time_limit = false;
+    for (; !has_exceeded_time_limit; k++) {
+        jump();
+        if ((k - k0)%period_display==0) {
+            display();
+            check_solution_is_ok(); // raises errors if pb
+        }
+        if ((k - k0) % 100 == 0) {
+            if (clock() > time_limit)
+                has_exceeded_time_limit = true;
+        }
+    }
+
 }
 
 void LocalSearch::jump() {
@@ -88,26 +103,19 @@ void LocalSearch::flea_move(const int &id) {
         }
         return;
     }
-    // Pick a random such target, having at least one neighbor other than v1
-    bool found = false;
-    for (unsigned i = 0; i < v1_essential.size() && !found; i++){
-        if (v1_essential[i]->get_delta_capt().size() > 2){
-            found = true;
-        }
-    }
-    if (!found) return;
+    // Pick a random such target
     // We could build a vector of acceptable neighbors for u, but
     // I think that would slow down iterations
     Target* u;
-    vector<Target*> u_neighbors;
-    do {
-        u = v1_essential[rand() % v1_essential.size()];
-        u_neighbors = u->get_delta_capt();
-    } while (u_neighbors.size() < 2);
+    vector<Target*> potential_v2;
+    u = v1_essential[rand() % v1_essential.size()];
+    potential_v2 = u->get_delta_capt();
+    potential_v2.push_back(u);
+    if (potential_v2.size() == u->get_delta_capt().size()) throw std::logic_error("Shit");
     // Pick a random neighbor of u for v2, not the well, not v1 (we know that it cannot be a captor)
     Target* v2;
     do {
-        v2 = u_neighbors[rand()%u_neighbors.size()];
+        v2 = potential_v2[rand()%potential_v2.size()];
     } while (v2->get_id() == id); // || v2->get_id() == 0);
     // Make changes in the field, they will be reverted if the move is unfeasible
     v1->unmake_captor();
@@ -143,9 +151,6 @@ void LocalSearch::flea_move(const int &id) {
     for (unsigned int i = 0; i < v2_neighbors.size(); i++){
         remove_if_useless_captor(v2_neighbors[i]->get_id());
     }
-    /*for (unsigned int i = 0; i < F->size(); i++){
-        remove_if_useless_captor((*F)[i]->get_id());
-    }*/
 }
 
 void LocalSearch::caterpillar_move(const int &id) {
@@ -155,6 +160,7 @@ void LocalSearch::caterpillar_move(const int &id) {
     vector<Target*> tail = vector<Target*>(0);
     vector<Target*> potential_u = vector<Target*>(1, (*F)[id]);
     vector<Target*> u_neighbors_comm;
+    int previous_cost = 0;
     int u_old = -1;
     bool caterpillar_tail = true;
     // trace the tail + body of the caterpillar
@@ -164,6 +170,7 @@ void LocalSearch::caterpillar_move(const int &id) {
             caterpillar_tail = false;
         }
         if (caterpillar_tail){
+            previous_cost += (*cost_computer)(u);
             u->unmake_captor();
             if (u->is_capted()){
                 tail.push_back(u);
@@ -171,6 +178,7 @@ void LocalSearch::caterpillar_move(const int &id) {
             else{
                 u->make_captor();
                 caterpillar_tail = false;
+                previous_cost -= (*cost_computer)(u);
             }
         }
         potential_u = vector<Target*>(0);
@@ -208,7 +216,7 @@ void LocalSearch::caterpillar_move(const int &id) {
 
     // if the new solution is feasible, we accept it
     // if it is not, revert changes
-    if (F->is_communicating()){
+    if (F->is_communicating() && previous_cost <= (*cost_computer)(head)){
         for (unsigned int i = 0; i < tail.size(); i++){
             move_solution(tail[i]->get_id(), head[i]->get_id());
         }
