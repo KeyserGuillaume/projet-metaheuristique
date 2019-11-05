@@ -72,21 +72,107 @@ void LocalSearch::run_on_time_limit(const clock_t time_limit, const int &period_
                 has_exceeded_time_limit = true;
         }
     }
-
 }
 
 void LocalSearch::jump() {
-    flea_move(current_solution[rand()%current_solution.size()]);
+    //if (rand()%10 == 0){musical_chairs();return;}
+    flea_jump(current_solution[rand() % current_solution.size()]);
 }
 
-void LocalSearch::flea_move(const int &id) {
+void LocalSearch::musical_chairs(){
+    Target* u = (*F)[current_solution[rand() % current_solution.size()]];
+    vector<Target*> ups, downs, u_neighbors_comm, u_neighbors_2_capt, potential_u;
+    // do random walk on the captors in comm, starting from this leaf, and remove those captors
+    vector<bool> visited = vector<bool> (F->size(), false);
+    potential_u = vector<Target*>(1, u);
+    do {
+        u = potential_u[rand()%potential_u.size()];
+        potential_u = vector<Target*>(0);
+        u_neighbors_comm = u->get_delta_comm();
+        for (unsigned int i = 0; i < u_neighbors_comm.size(); i++){
+            if (u_neighbors_comm[i]->is_captor())
+                potential_u.push_back(u_neighbors_comm[i]);
+        }
+        u->unmake_captor();
+        ups.push_back(u);
+    } while ((potential_u.size() > 0 && rand()%3 != 0) || (potential_u.size() > 0 && ups.size() < 2));
+
+    // choose some captor nearby from which to start the reconstruction
+    // not an infinite loop because there is the last captor we put in ups
+    potential_u = vector<Target*>(0);
+    do {
+        u_neighbors_2_capt = ups[rand() % ups.size()]->get_delta_2_capt();
+        for (unsigned int i = 0; i < u_neighbors_2_capt.size(); i++) {
+            if (u_neighbors_2_capt[i]->is_captor() || u_neighbors_2_capt[i]->get_id() == 0)
+                potential_u.push_back(u_neighbors_2_capt[i]);
+        }
+    } while (potential_u.size() == 0);
+    u = potential_u[rand()%potential_u.size()];
+    // reconstruct in greedy way from this captor
+    int value, max; vector<int> values;
+    for (unsigned int i = 0; i < ups.size(); i++){
+        max = 0;
+        u_neighbors_comm = u->get_delta_comm();
+        values = vector<int> (u_neighbors_comm.size(), 0);
+        for (unsigned int j = 0; j < u_neighbors_comm.size(); j++){
+            if (u_neighbors_comm[j]->is_captor()){
+                value = 0;
+            }
+            else{
+                u_neighbors_comm[j]->make_captor();
+                value = u_neighbors_comm[j]->get_uniquely_capted_targets().size();
+                u_neighbors_comm[j]->unmake_captor();
+            }
+            if (value > max){
+                max = value;
+            }
+            values[j] = value;
+        }
+        if (max > 0){
+            potential_u = vector<Target*>(0);
+            for (unsigned int j = 0; j < u_neighbors_comm.size(); j++){
+                if (values[j] >= 0.7*max){
+                    potential_u.push_back(u_neighbors_comm[j]);
+                }
+            }
+            u = potential_u[rand()%potential_u.size()];
+            downs.push_back(u);
+            u->make_captor();
+        }
+    }
+    if (!F->is_everyone_capted() || !F->is_communicating()){
+        //F->write_solution("../../solutions/sol_2.txt");
+        for (int i = downs.size() - 1; i >= 0; i--){
+            downs[i]->unmake_captor();
+        }
+        for (int i = ups.size() - 1; i >= 0; i--){
+            ups[i]->make_captor();
+        }
+        //F->write_solution("../../solutions/sol_3.txt");
+        return;
+    }
+    for (unsigned int i = 0; i < downs.size(); i++){
+        move_solution(ups[i]->get_id(), downs[i]->get_id());
+    }
+    for (unsigned int i = downs.size(); i < ups.size(); i++){
+        remove_captor_from_solution(ups[i]->get_id());
+    }
+    nb_other_moves++;
+    /*for (unsigned int i = 0; i < F->size(); i++){
+        remove_if_useless_captor(i);
+    }*/
+}
+
+void LocalSearch::flea_jump(const int &id) {
     /*
      * Move captor from v1 to v2 if feasible
+     * if not feasible, try to repair with a captor in v3 moving to v4
      * id must be the id of a captor
      */
-    Target* v1 = (*F)[id];
+    Target *v1, *v2, *v3, *v4, *u, *t;
+    v1 = (*F)[id];
     if (!v1->is_captor())
-        throw std::invalid_argument( "LocalSearch::flea_move only accepts captors.");
+        throw std::invalid_argument( "LocalSearch::flea_jump only accepts captors.");
     int previous_cost = (*cost_computer)(v1);
     // Find targets uniquely capted by v1, not captors themselves, not the well
     vector<Target*> v1_essential = v1->get_uniquely_capted_targets();
@@ -94,58 +180,120 @@ void LocalSearch::flea_move(const int &id) {
     if (v1_essential.size() == 0){
         v1->unmake_captor();
         if (v1->is_capted() && F->is_communicating()) {
+            std::cout << "stumbled on a useless captor by chance" << std::endl;
             remove_captor_from_solution(id);
-            std::cout << "careful" << std::endl;
         }
         else{
             v1->make_captor();
-            caterpillar_move(id);
+            caterpillar_move(id, true);
         }
         return;
     }
     // Pick a random such target
     // We could build a vector of acceptable neighbors for u, but
     // I think that would slow down iterations
-    Target* u;
     vector<Target*> potential_v2;
     u = v1_essential[rand() % v1_essential.size()];
     potential_v2 = u->get_delta_capt();
     potential_v2.push_back(u);
-    if (potential_v2.size() == u->get_delta_capt().size()) throw std::logic_error("Shit");
-    // Pick a random neighbor of u for v2, not the well, not v1 (we know that it cannot be a captor)
-    Target* v2;
+    // Pick a random neighbor of u for v2, not v1 (we know that it cannot be a captor)
     do {
         v2 = potential_v2[rand()%potential_v2.size()];
-    } while (v2->get_id() == id); // || v2->get_id() == 0);
+    } while (v2->get_id() == id);
     // Make changes in the field, they will be reverted if the move is unfeasible
     v1->unmake_captor();
     v2->make_captor();
     // Stop there and revert change if moving the captor of v1 to v2 would mean
     // some targets would no longer be capted. The only targets that need verification
     // are those uniquely capted by v1 AND v1 itself.
-    for (unsigned int i = 0; i < v1_essential.size(); i++){
+    bool need_to_repair = false;
+    for (unsigned i = 0; i < v1_essential.size() && !need_to_repair; i++){
         if (!v1_essential[i]->is_capted()){
+            need_to_repair = true;
+            t = v1_essential[i];
+        }
+    }
+    // try to fix this by moving a captor v3 to v4
+    if (need_to_repair){
+        vector<Target*> potential_v3, potential_v4, t_neighbors;
+        potential_v4 = t->get_delta_capt();
+        potential_v4.push_back(t);
+        // we know there is at least v1 and t in potential_v4, we exclude v1
+        do{
+            v4 = potential_v4[rand()%potential_v4.size()];
+        } while (v4->get_id() == v1->get_id());
+        t_neighbors = t->get_delta_comm();
+        potential_v3 = vector<Target*> (0);
+        // we make sure to exclude v2 from the choice for v3
+        for (unsigned int i = 0; i < t_neighbors.size(); i++){
+            if (t_neighbors[i]->is_captor() && t_neighbors[i]->get_id() != v2->get_id())
+                potential_v3.push_back(t_neighbors[i]);
+        }
+        if (potential_v3.size() == 0){
             v2->unmake_captor();
             v1->make_captor();
             return;
         }
+        v3 = potential_v3[rand()%potential_v3.size()];
+        v3->unmake_captor();
+        v4->make_captor();
+
+        bool found = false;
+
+        // verify v1's neighbors are capted
+        for (unsigned int i = 0; i < v1_essential.size() && !found; i++){
+            if (!v1_essential[i]->is_capted()){
+                found = true;
+            }
+        }
+        // verify v3's neighbors are capted
+        vector<Target*> v3_neighbors = v3->get_delta_capt();
+        for (unsigned int i = 0; i < v3_neighbors.size() && !found; i++){
+            if (!v3_neighbors[i]->is_capted()){
+                found = true;
+            }
+        }
+
+        if (found || !v3->is_capted()){
+            v1->make_captor();
+            v2->unmake_captor();
+            v3->make_captor();
+            v4->unmake_captor();
+            return;
+        }
     }
+
     if (!v1->is_capted()){
-        v2->unmake_captor();
         v1->make_captor();
+        v2->unmake_captor();
+        if (need_to_repair){
+            v3->make_captor();
+            v4->unmake_captor();
+        }
         return;
     }
     // Stop there and revert change if moving the captor of v1 to v2 would mean some captors
     // would no longer be in communication with the well
+    // note that the cost thing is not correct anymore
     if (!F->is_communicating() || (*cost_computer)(v2) > previous_cost){
-        v2->unmake_captor();
         v1->make_captor();
+        v2->unmake_captor();
+        if (need_to_repair){
+            v3->make_captor();
+            v4->unmake_captor();
+        }
         return;
     }
     // If we got this far then the move was feasible, for now we accept it
     move_solution(v1->get_id(), v2->get_id());
+    nb_flea_jumps++;
     if (verbose)
         std::cout << "accepted to move captor of " << v1->get_id() << " to " << v2->get_id() << std::endl;
+    if (need_to_repair) {
+        move_solution(v3->get_id(), v4->get_id());
+        if (verbose)
+            std::cout << "moved captor of " << v1->get_id() << " to " << v2->get_id() << " at the same time" << std::endl;
+    }
     // Check that the neighbors of v2 in the graph of radius 2*r_capt did not become useless
     vector<Target*> v2_neighbors = v2->get_delta_2_capt();
     for (unsigned int i = 0; i < v2_neighbors.size(); i++){
@@ -153,7 +301,7 @@ void LocalSearch::flea_move(const int &id) {
     }
 }
 
-void LocalSearch::caterpillar_move(const int &id) {
+void LocalSearch::caterpillar_move(const int &id, const bool &repeat) {
     // we assume u does not have any uniquely capted targets
     Target* u;
     // this is the tail of the caterpillar, ie the targets whose captors we will remove
@@ -193,7 +341,6 @@ void LocalSearch::caterpillar_move(const int &id) {
     if (tail.size() == 0){
         return;
     }
-    if (tail[0]->get_id() != id) throw std::logic_error("Dafuck?");
     // define the head (ie where we will place the new captors)
     vector<Target*> head = vector<Target*>(0);
     for (unsigned int i = 0; i < tail.size(); i++){
@@ -224,7 +371,9 @@ void LocalSearch::caterpillar_move(const int &id) {
             remove_if_useless_captor(i);
         }
         if (verbose) std::cout << "caterpillar move accepted" << std::endl;
+        nb_caterpillar_moves++;
     }
+
     else{
         // do not change the order of the two lines below, they are inversed
         // compared to the order above and it must stay so because sometimes
@@ -236,11 +385,14 @@ void LocalSearch::caterpillar_move(const int &id) {
         for (unsigned int i = 0; i < tail.size(); i++){
             tail[i]->make_captor();
         }
+        if (repeat && rand()%3 != 0)
+            caterpillar_move(id, repeat);
     }
 }
 
 void LocalSearch::write_solution(const std::string &filename) const {
-    write_solution_to_file(filename, current_solution);
+    F->write_solution(filename);
+    //write_solution_to_file(filename, current_solution);
 }
 
 
@@ -308,6 +460,14 @@ void LocalSearch::move_solution(const int &v1, const int &v2) {
     if (!found){
         throw std::logic_error("Target " + std::to_string(v1) + " should have been in the solution.");
     }
+}
+
+void LocalSearch::do_very_bad_things_to_triangle() {
+    vector<Target*> triangle = F->get_triangle();
+    if (triangle.size() == 0)
+        return;
+
+
 }
 
 void write_solution_to_file(std::string filename, vector<int> solution) {

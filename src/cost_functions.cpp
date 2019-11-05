@@ -42,3 +42,7 @@ int MinLogUniqueCover::operator() (Target* target) const{
     int res = MinUniqueCover::operator()(target);
     return (res == 0) ? 0 : 10*log(res);
 }
+
+int ShakeUp::operator()(Target *target) const {
+    return abs(int(10 - target->get_coords().second)) + abs(int(20 - target->get_coords().first));
+}

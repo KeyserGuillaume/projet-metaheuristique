@@ -7,14 +7,15 @@ Target::Target(){
     am_i_a_captor = false;
 }
 
-Target::Target(std::string input_line){
+Target::Target(std::string input_line, const int &my_id) {
     std::stringstream line(input_line);
     std::string entity = "";
     float x, y;
     while (entity == ""){
         std::getline(line, entity, ' ');
     }
-    id = std::stoi(entity);
+    original_id = std::stoi(entity);
+    //std::cout << original_id << std::endl;
 
     entity = "";
     while (entity == ""){
@@ -30,10 +31,12 @@ Target::Target(std::string input_line){
 
     coords = fpair(x, y);
     am_i_a_captor = false;
+    id = my_id;
 }
 
 Target::Target(const Target &t){
     id = t.id;
+    original_id = t.original_id;
     coords = t.coords;
     am_i_a_captor = t.am_i_a_captor;
     delta_capt = t.delta_capt;
@@ -59,7 +62,8 @@ void Target::add_target_comm(Target* a){
 }
 
 float Target::distance(const Target &v) const{
-    return sqrt(pow(coords.first - v.coords.first, 2) + pow(coords.second - v.coords.second, 2));
+    float res = sqrt(pow(coords.first - v.coords.first, 2) + pow(coords.second - v.coords.second, 2));
+    return res;
 }
 
 int Target::get_nb_of_captors() const{
@@ -115,6 +119,10 @@ bool Target::has_any_uniquely_capted_targets() const {
         }
     }
     return false;
+}
+
+Target::Target(int my_id) {
+    id = my_id;
 }
 
 

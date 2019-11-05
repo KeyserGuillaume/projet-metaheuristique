@@ -8,14 +8,16 @@ using namespace std;
 class Target{
 private:
     int id;
+    int original_id;
     fpair coords;
     bool am_i_a_captor;
     std::vector<Target*> delta_capt, delta_comm, delta_2_capt;
 
 public:
     Target();
-    Target(std::string input_line);
+    Target(std::string input_line, const int &my_id);
     Target(int my_id, fpair my_coords);
+    Target(int my_id);
     Target(const Target &S);
 
     void add_target_capt(Target* a);
@@ -27,6 +29,7 @@ public:
     //void unmake_captor(){am_i_a_captor = false;}
 
     int get_id() const{return id;}
+    int get_original_id() const{return original_id;}
     fpair get_coords() const{return coords;}
     bool is_captor() const{return am_i_a_captor;}
     bool has_any_uniquely_capted_targets() const;

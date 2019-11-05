@@ -54,3 +54,11 @@ class MinLogUniqueCover: public MinUniqueCover{
 public:
     virtual int operator() (Target* target) const;
 };
+
+class ShakeUp: public CostFunction{
+    /*
+     * Move up every captor
+     */
+public:
+    virtual int operator() (Target* target) const;
+};
