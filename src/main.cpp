@@ -15,11 +15,11 @@ int main(int argc, char *argv[]){
     int r_capt, r_comm;
 
     if (argc == 1){
-        //instance = "../../Instances/square_grid_40X40.dat";
-        instance = "../../Instances/grille3030_1_ok.dat";
-        //instance = "../../Instances/captANOR1500_15_100.dat";
+        instance = "../../Instances/square_grid_40X40.dat";
+        //instance = "../../Instances/grille3030_1_ok.dat";
+        //instance = "../../Instances/captANOR625_15_100.dat";
         r_capt = 1;
-        r_comm = 2;
+        r_comm = 1;
     }
     else{
         if (argc != 4) throw std::invalid_argument( "No arguments given for r_capt and r_comm.");
@@ -41,12 +41,8 @@ int main(int argc, char *argv[]){
     LS.display();
     LS.check_solution_is_ok();
     if (argc == 1){
-        LS.run(5000000, 10000);
+        LS.run(50000000, 10000);
 
-        // to check we are not stuck in a local minimum, we verify that
-        // moves are accepted, by raising the verbosity level on a few iterations.
-        LS.verbose = true;
-        LS.run(100, 1);
         LS.display();
 
         LS.stats();

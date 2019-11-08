@@ -146,12 +146,15 @@ for instance in instances:
 write_results_on_gsheet("X", my_list)
 
 # instance = "../Instances/captANOR1500_15_100.dat"
-instance = "../Instances/grille3030_1_ok.dat"
-# instance = "../Instances/square_grid_40X40.dat"
+# instance = "../Instances/grille3030_1_ok.dat"
+instance = "../Instances/square_grid_40X40.dat"
 V = read_instance(instance)
 solution = read_solution("../solutions/sol_1.txt")
-plot_solution(V, solution, 1, 2, True)
+plot_solution(V, solution, 2, 2, True)
 
+sol2 = read_solution("../solutions/sol_2.txt")
+sol3 = read_solution("../solutions/sol_3.txt")
+visualize_diff_between_solutions(instance, 2, 2, sol2, sol3)
 
 instance = "../Instances/square_grid_40X40.dat"
 V = read_instance(instance)

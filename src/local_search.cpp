@@ -27,9 +27,11 @@ void LocalSearch::remove_captor_from_solution(const int &id) {
     for (unsigned int i = 0; i < current_solution.size(); i++){
         if (current_solution[i] == id){
             // erase in constant time by replacing with last element and erasing last element
+            // actually this optimization is useless because we don't remove elements often...
             current_solution[i] = current_solution[current_value()-1];
             current_solution.pop_back();
             if (k > 0) std::cout << "removed a useless captor " << i << std::endl;
+            return;
         }
     }
 }
@@ -75,7 +77,7 @@ void LocalSearch::run_on_time_limit(const clock_t time_limit, const int &period_
 }
 
 void LocalSearch::jump() {
-    //if (rand()%10 == 0){musical_chairs();return;}
+    if (rand()%10 == 0){musical_chairs();return;}
     flea_jump(current_solution[rand() % current_solution.size()]);
 }
 
@@ -151,13 +153,48 @@ void LocalSearch::musical_chairs(){
         //F->write_solution("../../solutions/sol_3.txt");
         return;
     }
+    // this commented part is about first, finding out whether the move modified the solution
+    // second, if it did, write it in files. leaving it here for debugging and visualization.
+    /*bool write = false;
+    bool found;
+    for (unsigned int i = 0; !write && i < downs.size(); i++){
+        found = false;
+        for (unsigned int j = 0; !found && j < ups.size(); j++){
+            if (downs[i]->get_id() == ups[j]->get_id())
+                found = true;
+        }
+        if (!found)
+            write = true;
+    }
+    if (write) {
+        for (int i = downs.size() - 1; i >= 0; i--){
+            downs[i]->unmake_captor();
+        }
+        for (int i = ups.size() - 1; i >= 0; i--){
+            ups[i]->make_captor();
+        }
+        F->write_solution("../../solutions/sol_2.txt");
+        for (unsigned int i = 0; i < ups.size(); i++){
+            ups[i]->unmake_captor();
+        }
+        for (unsigned int i = 0; i < downs.size(); i++){
+            downs[i]->make_captor();
+        }
+        F->write_solution("../../solutions/sol_3.txt");
+    }*/
     for (unsigned int i = 0; i < downs.size(); i++){
         move_solution(ups[i]->get_id(), downs[i]->get_id());
     }
+    // if the last of ups is also in downs we get a funny behaviour where the
+    // solution contains twice the same captor... but next line, the duplicate entry is removed.
     for (unsigned int i = downs.size(); i < ups.size(); i++){
         remove_captor_from_solution(ups[i]->get_id());
     }
-    nb_other_moves++;
+
+    // this is a bit tricky since most of the moves are false moves, they don't change the solution
+    nb_other_moves++;//check_solution_is_ok();
+    // we should only do this next commented bit if the move is a true move but I am leaving
+    // this unverified because it works ok without it.
     /*for (unsigned int i = 0; i < F->size(); i++){
         remove_if_useless_captor(i);
     }*/
@@ -285,7 +322,11 @@ void LocalSearch::flea_jump(const int &id) {
         return;
     }
     // If we got this far then the move was feasible, for now we accept it
+    /*if (need_to_repair){
+        F->write_solution("../../solutions/sol_2.txt");
+    }*/
     move_solution(v1->get_id(), v2->get_id());
+    //if (need_to_repair){nb_other_moves++;}else{nb_flea_jumps++;}
     nb_flea_jumps++;
     if (verbose)
         std::cout << "accepted to move captor of " << v1->get_id() << " to " << v2->get_id() << std::endl;
@@ -294,6 +335,9 @@ void LocalSearch::flea_jump(const int &id) {
         if (verbose)
             std::cout << "moved captor of " << v1->get_id() << " to " << v2->get_id() << " at the same time" << std::endl;
     }
+    /*if (need_to_repair){
+        F->write_solution("../../solutions/sol_3.txt");
+    }*/
     // Check that the neighbors of v2 in the graph of radius 2*r_capt did not become useless
     vector<Target*> v2_neighbors = v2->get_delta_2_capt();
     for (unsigned int i = 0; i < v2_neighbors.size(); i++){
