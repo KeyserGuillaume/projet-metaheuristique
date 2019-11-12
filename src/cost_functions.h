@@ -9,7 +9,7 @@ class CostFunction{
      */
 public:
     virtual int operator() (Target* target) const;
-    int operator() (const vector<Target*> & targets) const;
+    int operator() (const std::vector<Target*> & targets) const;
 };
 
 class NbCaptors: public CostFunction{

@@ -87,8 +87,8 @@ bool Target::is_capted() const {
     return false;
 }
 
-vector<Target *> Target::get_uniquely_capted_targets() const {
-    vector<Target*> v1_essential = vector<Target*>(0);
+std::vector<Target *> Target::get_uniquely_capted_targets() const {
+    std::vector<Target*> v1_essential = std::vector<Target*>(0);
     // find targets uniquely capted by this one, not captors themselves, not the well
     for (unsigned int i = 0; i < delta_capt.size(); i++){
         if (delta_capt[i]->get_id() != 0 &&
@@ -104,7 +104,7 @@ bool Target::has_any_uniquely_capted_targets() const {
     if (!am_i_a_captor){
         throw std::invalid_argument("Target::has_any_uniquely_capted_targets is undefined for non-captor targets");
     }
-    vector<Target*> u_neighbors;
+    std::vector<Target*> u_neighbors;
     bool is_uniquely_capted;
     for (unsigned int i = 0; i < delta_capt.size(); i++){
         if (!delta_capt[i]->is_captor() && delta_capt[i]->get_id() != 0){
@@ -125,8 +125,21 @@ Target::Target(int my_id) {
     id = my_id;
 }
 
+void Target::make_captor() {
+    if (am_i_a_captor)
+        throw std::invalid_argument("already a captor");
+    am_i_a_captor = true;
+}
 
-ostream& operator<<(ostream& str, const Target& s){
+void Target::unmake_captor() {
+    if (!am_i_a_captor)
+        throw std::invalid_argument("not a captor");
+    am_i_a_captor = false;
+    clear_successors();
+}
+
+
+std::ostream& operator<<(std::ostream& str, const Target& s){
     fpair coords = s.get_coords();
     str << "id: " << s.get_id() << "  x: " << coords.first << "   y: " << coords.second;
     str << "  (is " << ((s.is_captor()) ? "" : "not ") << "a captor) ";

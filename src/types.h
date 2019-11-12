@@ -7,4 +7,4 @@
 #include <stdexcept>
 
 typedef std::pair<float, float> fpair;
-typedef std::vector<int> vector_int;
+typedef std::vector<unsigned int> vector_int;

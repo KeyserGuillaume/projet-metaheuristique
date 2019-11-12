@@ -1,7 +1,7 @@
 #include "cost_functions.h"
 #include <math.h>
 
-int CostFunction::operator() (const vector<Target*> & targets) const{
+int CostFunction::operator() (const std::vector<Target*> & targets) const{
     /*
      * sum of unitary costs
      */
