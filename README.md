@@ -12,7 +12,7 @@ Assuming being in C means that a captor is positioned on the target, the first c
 
 We minimize the number of elements in C.
 
-## Algorithm employed
+## Algorithm employed
 
 We coded a Local Search algorithm which yields very good solutions on all instances. Captors are moved in their local neighborhood so that both feasibility conditions are verified at all time. Several captors can be moved at once, sometimes over large distances (one move focuses on moving captors whose only use is to keep all captors connected). Before moving a captor, we check it still serves a purpose, and this is the mechanism used to improve the solution. We spend a lot of time shifting between equivalent solutions.
 
